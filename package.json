@@ -1,0 +1,19 @@
+{
+  "name": "game_projects_rogue",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "lite-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "jquery": "^3.7.1"
+  },
+  "devDependencies": {
+    "lite-server": "^2.6.1"
+  }
+}

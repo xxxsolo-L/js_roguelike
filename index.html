@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Бомбер-игра</title>
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,700&amp;subset=cyrillic" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700&amp;subset=cyrillic" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,700&amp;subset=cyrillic" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Playfair+Display:400,400i|Tinos:400,400i&amp;subset=cyrillic" rel="stylesheet">
+    <script src="jquery.min.js"></script>
+    <script src="index.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body, html { height: 100%; }
+        body { background-color: #000; color: #fff; font-family: "Roboto", sans-serif; }
+        h1 { font-family: "Playfair Display", serif; font-size: 30px; padding: 10px 0; margin: 0; }
+        .field-box { border: 2px solid #d0d0d0; display: flex; justify-content: center; }
+        .field { position: relative; width: calc(40 * 25px); height: calc(24 * 25px); display: flex; flex-wrap: wrap; }
+        .tile { width: 25px; height: 25px; background-size: cover; transition: transform 0.2s ease; }
+        .wall { background-image: url('images/tile-W.png'); border: 1px solid #555; }   /* + */
+        .floor { background-image: url('images/tile-.png'); }           /* + */
+        .corridor { background-image: url('images/tile-.png'); }        /* + */
+        .sword { background-image: url('images/tile-SW.png'); }
+        .potion { background-image: url('images/tile-HP.png'); }
+        .hero { background-image: url('images/tile-P.png'); }           /* + */
+        .hero.attack { transform: scale(1.2); }
+        .enemy { background-image: url('images/tile-E.png'); }          /* + */
+    </style>
+</head>
+<body>
+<h1>Игровое поле</h1>
+<div class="field-box"><div class="field"></div></div>
+<div class="cl"></div>
+<script>
+    $(document).ready(function() {
+        const width = 40;
+        const height = 24;
+        const field = $('.field');
+        const map = [];
+        let heroPosition = { x: 0, y: 0 };
+
+        for (let y = 0; y < height; y++) {
+            map[y] = [];
+            for (let x = 0; x < width; x++) {
+                map[y][x] = 'wall';
+            }
+        }
+
+        function createRooms() {
+            const roomCount = Math.floor(Math.random() * 6) + 5;
+            for (let i = 0; i < roomCount; i++) {
+                let roomWidth = Math.floor(Math.random() * 4) + 3;
+                let roomHeight = Math.floor(Math.random() * 4) + 3;
+                let startX = Math.floor(Math.random() * (width - roomWidth - 2)) + 1;
+                let startY = Math.floor(Math.random() * (height - roomHeight - 2)) + 1;
+                for (let y = startY; y < startY + roomHeight; y++) {
+                    for (let x = startX; x < startX + roomWidth; x++) {
+                        map[y][x] = 'floor';
+                    }
+                }
+            }
+        }
+
+        function createCorridors() {
+            const corridorCount = Math.floor(Math.random() * 3) + 3;
+            for (let i = 0; i < corridorCount; i++) {
+                let startX = Math.floor(Math.random() * (width - 2)) + 1;
+                for (let y = 1; y < height - 1; y++) {
+                    if (map[y][startX] !== 'floor') {
+                        map[y][startX] = 'corridor';
+                    }
+                }
+            }
+            for (let i = 0; i < corridorCount; i++) {
+                let startY = Math.floor(Math.random() * (height - 2)) + 1;
+                for (let x = 1; x < width - 1; x++) {
+                    if (map[startY][x] !== 'floor') {
+                        map[startY][x] = 'corridor';
+                    }
+                }
+            }
+        }
+
+        function placeCharacter(character) {
+            while (true) {
+                let x = Math.floor(Math.random() * width);
+                let y = Math.floor(Math.random() * height);
+                if (map[y][x] === 'floor') {
+                    map[y][x] = character;
+                    if (character === 'hero') heroPosition = { x, y };
+                    break;
+                }
+            }
+        }
+
+        function placeItem(item, times = 1) {
+                for (let i = 0; i < times; i++) {
+                    while (true) {
+                        let x = Math.floor(Math.random() * width);
+                        let y = Math.floor(Math.random() * height);
+                        if (map[y][x] === 'floor') {
+                            map[y][x] = item;
+                            break;
+                        }
+                    }
+                }
+        }
+
+        function placeEnemies(count) {
+            for (let i = 0; i < count; i++) {
+                placeCharacter('enemy');
+            }
+        }
+
+        function moveHero(dx, dy) {
+            let newX = heroPosition.x + dx;
+            let newY = heroPosition.y + dy;
+            if (map[newY] && map[newY][newX] && (map[newY][newX] === 'floor' || map[newY][newX] === 'corridor')) {
+                map[heroPosition.y][heroPosition.x] = 'floor';
+                heroPosition.x = newX;
+                heroPosition.y = newY;
+                map[newY][newX] = 'hero';
+                drawMap();
+            }
+        }
+
+        function attackEnemies() {
+            let directions = [
+                [0, -1], [0, 1], [-1, 0], [1, 0]
+            ];
+            $(".hero").addClass("attack");
+            setTimeout(() => { $(".hero").removeClass("attack"); }, 200);
+            directions.forEach(([dx, dy]) => {
+                let x = heroPosition.x + dx;
+                let y = heroPosition.y + dy;
+                if (map[y] && map[y][x] === 'enemy') {
+                    map[y][x] = 'floor';
+                }
+            });
+            drawMap();
+        }
+
+        createRooms();
+        createCorridors();
+        placeCharacter('hero');
+        placeItem('sword', 2);
+        placeItem('potion', 10);
+        placeEnemies(10);
+        attackEnemies();
+        console.log(map);
+
+        function drawMap() {
+            field.empty();
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++)     {
+                    let tile = $('<div class="tile"></div>');
+                    tile.addClass(map[y][x]);
+                    field.append(tile);
+                }
+            }
+        }
+
+        $(document).keydown(function(event) {
+            const keyMap = { 'w': [0, -1], 'ц': [0, -1], 's': [0, 1], 'ы': [0, 1], 'a': [-1, 0], 'ф': [-1, 0], 'd': [1, 0], 'в': [1, 0] };
+            if (event.key in keyMap) {
+                moveHero(...keyMap[event.key]);
+            } else if (event.key === ' ') {
+                attackEnemies();
+            }
+        });
+
+        drawMap();
+    });
+</script>
+</body>
+</html>
