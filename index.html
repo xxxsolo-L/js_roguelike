@@ -4,35 +4,82 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Бомбер-игра</title>
+    <title>Roguelike game</title>
     <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,700&amp;subset=cyrillic" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700&amp;subset=cyrillic" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,700&amp;subset=cyrillic" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Playfair+Display:400,400i|Tinos:400,400i&amp;subset=cyrillic" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Playfair+Display:400,400i|Tinos:400,400i&amp;subset=cyrillic"
+          rel="stylesheet">
     <script src="jquery.min.js"></script>
     <script src="index.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body, html { height: 100%; }
-        body { background-color: #000; color: #fff; font-family: "Roboto", sans-serif; }
-        h1 { font-family: "Playfair Display", serif; font-size: 30px; padding: 10px 0; margin: 0; }
-        .field-box { border: 2px solid #d0d0d0; display: flex; justify-content: center; }
-        .field { position: relative; width: calc(40 * 25px); height: calc(24 * 25px); display: flex; flex-wrap: wrap; }
+        * {
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: "Roboto", sans-serif;
+        }
+
+        h1 {
+            font-family: "Playfair Display", serif;
+            font-size: 30px;
+            padding: 10px 0;
+            margin: 0;
+        }
+
+        .field-box {
+            border: 2px solid #d0d0d0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .field {
+            position: relative;
+            width: calc(40 * 25px);
+            height: calc(24 * 25px);
+            display: flex;
+            flex-wrap: wrap;
+        }
+
         .tile {
             width: 25px;
             height: 25px;
             background-size: cover;
-            transition: transform 0.2s ease;
-            position: relative; /* Добавлено */
+            position: relative;
         }
-        .wall { background-image: url('images/tile-W.png'); border: 1px solid #555; }   /* + */
-        .floor { background-image: url('images/tile-.png'); }           /* + */
-        .corridor { background-image: url('images/tile-.png'); }        /* + */
-        .sword { background-image: url('images/tile-SW.png'); }
-        .potion { background-image: url('images/tile-HP.png'); }
-        .hero { background-image: url('images/tile-P.png'); }           /* + */
-        .hero.attack { transform: scale(1.2); }
-        .enemy { background-image: url('images/tile-E.png'); }          /* + */
+
+        .wall {
+            background-image: url('images/tile-W.png');
+            border: 1px solid #555;
+        }
+
+        .floor, .corridor {
+            background-image: url('images/tile-.png');
+        }
+
+        .sword {
+            background-image: url('images/tile-SW.png');
+        }
+
+        .potion {
+            background-image: url('images/tile-HP.png');
+        }
+
+        .hero {
+            background-image: url('images/tile-P.png');
+        }
+
+        .enemy {
+            background-image: url('images/tile-E.png');
+        }
+
         .health {
             height: 3px;
             background-color: red;
@@ -41,293 +88,106 @@
             left: 0;
         }
 
+        .exit {
+            background-image: url('images/tile-portal.jpg');
+        }
+
+        .miss-text {
+            position: absolute;
+            color: red;
+            font-weight: bold;
+            font-size: 12px;
+            pointer-events: none;
+            animation: fadeOut 1s forwards;
+            z-index: 1000;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
     </style>
 </head>
 <body>
-<h1>Игровое поле</h1>
-<div class="field-box"><div class="field"></div></div>
-<div class="cl"></div>
+<div class="intro" id="intro">
+    <h1>Roguelike</h1>
+    <div class="logo">
+        <img src="images/tile-P.png" alt="Герой" style="width: 150px; height: 150px;">
+    </div>
+    <p>Управление:</p>
+    <ul>
+        <li><strong>W / ↑</strong> - вверх</li>
+        <li><strong>S / ↓</strong> - вниз</li>
+        <li><strong>A / ←</strong> - влево</li>
+        <li><strong>D / →</strong> - вправо</li>
+        <li><strong>Пробел</strong> - атака</li>
+    </ul>
+    <button id="startGame">Начать игру</button>
+</div>
+
+<div class="game-container" id="game-container" style="display: none;">
+    <h1>Игровое поле</h1>
+    <div class="field-box">
+        <div class="field"></div>
+    </div>
+    <div class="cl"></div>
+</div>
+
+<style>
+    .intro {
+        text-align: center;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        border: 2px solid #555;
+        border-radius: 10px;
+    }
+
+    .logo {
+        margin: 20px 0;
+    }
+
+    .intro p {
+        margin: 10px 0 5px;
+    }
+
+    .intro ul {
+        list-style-type: none;
+        padding-left: 0;
+        margin: 0 auto;
+        max-width: 300px;
+        text-align: center;
+    }
+
+    .intro li {
+        margin: 10px 0;
+    }
+
+    #startGame {
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+
+    #startGame:hover {
+        background-color: #45a049;
+    }
+</style>
 <script>
-    $(document).ready(function() {
-        const width = 40;
-        const height = 24;
-        const field = $('.field');
-        const map = [];
-        let heroPosition = { x: 0, y: 0 };
 
-        for (let y = 0; y < height; y++) {
-            map[y] = [];
-            for (let x = 0; x < width; x++) {
-                map[y][x] = 'wall';
-            }
-        }
-
-        function createRooms() {
-            const roomCount = Math.floor(Math.random() * 6) + 5;
-            for (let i = 0; i < roomCount; i++) {
-                let roomWidth = Math.floor(Math.random() * 4) + 3;
-                let roomHeight = Math.floor(Math.random() * 4) + 3;
-                let startX = Math.floor(Math.random() * (width - roomWidth - 2)) + 1;
-                let startY = Math.floor(Math.random() * (height - roomHeight - 2)) + 1;
-                for (let y = startY; y < startY + roomHeight; y++) {
-                    for (let x = startX; x < startX + roomWidth; x++) {
-                        map[y][x] = 'floor';
-                    }
-                }
-            }
-        }
-
-        function createCorridors() {
-            const corridorCount = Math.floor(Math.random() * 3) + 3;
-            for (let i = 0; i < corridorCount; i++) {
-                let startX = Math.floor(Math.random() * (width - 2)) + 1;
-                for (let y = 1; y < height - 1; y++) {
-                    if (map[y][startX] !== 'floor') {
-                        map[y][startX] = 'corridor';
-                    }
-                }
-            }
-            for (let i = 0; i < corridorCount; i++) {
-                let startY = Math.floor(Math.random() * (height - 2)) + 1;
-                for (let x = 1; x < width - 1; x++) {
-                    if (map[startY][x] !== 'floor') {
-                        map[startY][x] = 'corridor';
-                    }
-                }
-            }
-        }
-
-        function placeCharacter(character) {
-            while (true) {
-                let x = Math.floor(Math.random() * width);
-                let y = Math.floor(Math.random() * height);
-                if (map[y][x] === 'floor') {
-                    map[y][x] = character;
-                    if (character === 'hero') heroPosition = { x, y };
-                    break;
-                }
-            }
-        }
-
-        function placeItems(item, count = 1) {
-            for (let i = 0; i < count; i++) {
-                placeCharacter(item);
-            }
-        }
-
-        // function placeItem(item, times = 1) {
-        //         for (let i = 0; i < times; i++) {
-        //             while (true) {
-        //                 let x = Math.floor(Math.random() * width);
-        //                 let y = Math.floor(Math.random() * height);
-        //                 if (map[y][x] === 'floor') {
-        //                     map[y][x] = item;
-        //                     break;
-        //                 }
-        //             }
-        //         }
-        // }
-
-        function placeEnemies(count) {
-            for (let i = 0; i < count; i++) {
-                placeCharacter('enemy');
-            }
-        }
-
-        // function moveHero(dx, dy) {
-        //     let newX = heroPosition.x + dx;
-        //     let newY = heroPosition.y + dy;
-        //     if (map[newY] && map[newY][newX] && (map[newY][newX] === 'floor' || map[newY][newX] === 'corridor')) {
-        //         map[heroPosition.y][heroPosition.x] = 'floor';
-        //         heroPosition.x = newX;
-        //         heroPosition.y = newY;
-        //         map[newY][newX] = 'hero';
-        //         drawMap();
-        //     }
-        // }
-
-        let heroHealth = 100;
-        let heroAttackPower = 1;
-        let healthData = {
-            hero: 100,
-            enemies: {}
-        };
-
-        function updateHealthBar() {
-            $(".hero .health").css("width", (heroHealth / 100) * 100 + "%");
-        }
-
-        function moveHero(dx, dy) {
-            let newX = heroPosition.x + dx;
-            let newY = heroPosition.y + dy;
-
-            if (map[newY] && map[newY][newX] && (map[newY][newX] === 'floor' || map[newY][newX] === 'corridor' || map[newY][newX] === 'potion' || map[newY][newX] === 'sword')) {
-                if (map[newY][newX] === 'potion') {
-                    heroHealth = Math.min(heroHealth + 20, 100); // Здоровье максимум 100
-                }
-                if (map[newY][newX] === 'sword') {
-                    heroAttackPower += 1; // Увеличиваем силу атаки
-                }
-
-                map[heroPosition.y][heroPosition.x] = 'floor';
-                heroPosition.x = newX;
-                heroPosition.y = newY;
-                map[newY][newX] = 'hero';
-                drawMap();
-            }
-        }
-
-
-        // function attackEnemies() {
-        //     let directions = [
-        //         [0, -1], [0, 1], [-1, 0], [1, 0]
-        //     ];
-        //     $(".hero").addClass("attack");
-        //     setTimeout(() => { $(".hero").removeClass("attack"); }, 200);
-        //     directions.forEach(([dx, dy]) => {
-        //         let x = heroPosition.x + dx;
-        //         let y = heroPosition.y + dy;
-        //         if (map[y] && map[y][x] === 'enemy') {
-        //             map[y][x] = 'floor';
-        //         }
-        //     });
-        //     drawMap();
-        // }
-        function attackEnemies() {
-            let directions = [
-                [0, -1], [0, 1], [-1, 0], [1, 0]
-            ];
-            $(".hero").addClass("attack");
-            setTimeout(() => { $(".hero").removeClass("attack"); }, 200);
-
-            directions.forEach(([dx, dy]) => {
-                let x = heroPosition.x + dx;
-                let y = heroPosition.y + dy;
-                if (map[y] && map[y][x] === 'enemy') {
-                    if (Math.random() < heroAttackPower / 2) {
-                        map[y][x] = 'floor'; // Убиваем врага
-                    }
-                }
-            });
-            drawMap();
-        }
-
-        function enemyAttack() {
-            let directions = [
-                [0, -1], [0, 1], [-1, 0], [1, 0]
-            ];
-            directions.forEach(([dx, dy]) => {
-                let x = heroPosition.x + dx;
-                let y = heroPosition.y + dy;
-                if (map[y] && map[y][x] === 'enemy') {
-                    heroHealth -= 10;
-                    updateHealthBar();
-                    if (heroHealth <= 0) {
-                        alert("Вы погибли! Игра окончена.");
-                        location.reload();
-                    }
-                }
-            });
-        }
-
-        function moveEnemies() {
-            let enemyPositions = [];
-
-            // Находим всех врагов
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    if (map[y][x] === 'enemy') {
-                        enemyPositions.push({ x, y });
-                    }
-                }
-            }
-
-            // Двигаем каждого врага случайно
-            enemyPositions.forEach(({ x, y }) => {
-                let directions = [
-                    [0, -1], [0, 1], [-1, 0], [1, 0]
-                ];
-                let [dx, dy] = directions[Math.floor(Math.random() * directions.length)];
-                let newX = x + dx;
-                let newY = y + dy;
-
-                if (map[newY] && map[newY][newX] === 'floor') {
-                    map[y][x] = 'floor';
-                    map[newY][newX] = 'enemy';
-                }
-            });
-
-            drawMap();
-        }
-
-
-
-        createRooms();
-        createCorridors();
-        placeCharacter('hero');
-        placeItems('sword', 2);
-        placeItems('potion', 10);
-        placeEnemies(10);
-        attackEnemies();
-        console.log(map);
-
-
-
-
-        // function drawMap() {
-        //     field.empty();
-        //     for (let y = 0; y < height; y++) {
-        //         for (let x = 0; x < width; x++)     {
-        //             let tile = $('<div class="tile"></div>');
-        //             tile.addClass(map[y][x]);
-        //             field.append(tile);
-        //         }
-        //     }
-        // }
-
-        function drawMap() {
-            field.empty();
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    let tile = $('<div class="tile"></div>');
-                    tile.addClass(map[y][x]);
-
-                    // Добавляем полосу здоровья только для героя и врагов
-                    if (map[y][x] === 'hero' || map[y][x] === 'enemy') {
-                        let healthBar = $('<div class="health"></div>');
-
-                        let healthPercent = (map[y][x] === 'hero')
-                            ? (heroHealth / 100) * 100
-                            : 100; // У врагов пока 100% здоровья
-
-                        healthBar.css({
-                            "width": healthPercent + "%",
-                            "background-color": map[y][x] === "hero" ? "green" : "red"
-                        });
-
-                        tile.append(healthBar);
-                    }
-
-                    field.append(tile);
-                }
-            }
-        }
-
-
-
-        $(document).keydown(function(event) {
-            const keyMap = { 'w': [0, -1], 'ц': [0, -1], 's': [0, 1], 'ы': [0, 1], 'a': [-1, 0], 'ф': [-1, 0], 'd': [1, 0], 'в': [1, 0] };
-            if (event.key in keyMap) {
-                moveHero(...keyMap[event.key]);
-                enemyAttack();
-                moveEnemies();
-            } else if (event.key === ' ') {
-                attackEnemies();
-            }
-        });
-
-        drawMap();
-    });
 </script>
 </body>
 </html>
